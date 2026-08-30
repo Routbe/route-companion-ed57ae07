@@ -119,6 +119,34 @@ export default function ProfileSettings() {
   /** Toegestane gebruikersnaam-vormen die herleidbaar blijven naar de echte naam. */
   const nameOptions = useMemo(() => verifiedHandleSuggestions(legalName), [legalName]);
 
+  /** Live beschikbaarheid per voorgestelde handle (max 12 tegelijk). */
+  const [optionStatus, setOptionStatus] = useState<Record<string, "checking" | "free" | "taken">>({});
+  useEffect(() => {
+    if (nameOptions.length === 0) return;
+    let alive = true;
+    const options = nameOptions.slice(0, 12);
+    setOptionStatus(Object.fromEntries(options.map((o) => [o, "checking" as const])));
+    void (async () => {
+      for (const option of options) {
+        try {
+          const res = await fetch(
+            `/api/profiles/check-handle?handle=${encodeURIComponent(option)}`,
+            { headers: { accept: "application/json" } },
+          );
+          const json = (await res.json()) as { available?: boolean };
+          if (!alive) return;
+          setOptionStatus((prev) => ({ ...prev, [option]: json.available ? "free" : "taken" }));
+        } catch {
+          if (!alive) return;
+          setOptionStatus((prev) => ({ ...prev, [option]: "taken" }));
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [nameOptions]);
+
 
   useEffect(() => {
     if (!user) return;
@@ -385,6 +413,7 @@ export default function ProfileSettings() {
                       <button
                         key={option}
                         type="button"
+                        disabled={optionStatus[option] === "taken"}
                         onClick={() => set("username", option)}
                         aria-pressed={active}
                         className={cn(
@@ -395,7 +424,16 @@ export default function ProfileSettings() {
                         )}
                       >
                         <span className="truncate font-mono text-xs">rout.be/{option}</span>
-                        {active ? <Check className="h-4 w-4 shrink-0" /> : null}
+                        <span className="flex shrink-0 items-center gap-1.5">
+                          <span className="text-[10px] uppercase text-muted-foreground">
+                            {optionStatus[option] === "free"
+                              ? "vrij"
+                              : optionStatus[option] === "taken"
+                                ? "bezet"
+                                : "…"}
+                          </span>
+                          {active ? <Check className="h-4 w-4" /> : null}
+                        </span>
                       </button>
                     );
                   })}
