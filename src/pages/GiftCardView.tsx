@@ -71,11 +71,25 @@ export default function GiftCardView() {
                 revealCode={!card.redeemed}
               />
             </div>
+            {card.fulfilmentStatus !== "not_applicable" ? (
+              <p className="mt-6 text-sm text-muted-foreground">
+                Fysieke levering:{" "}
+                <strong className="text-foreground">
+                  {card.fulfilmentStatus === "pending_print"
+                    ? "wordt gedrukt"
+                    : card.fulfilmentStatus === "packaged"
+                      ? "ingepakt"
+                      : "verzonden"}
+                </strong>
+                {card.trackingCode ? ` · tracking ${card.trackingCode}` : ""}
+              </p>
+            ) : null}
             {!card.redeemed ? (
               <Button asChild className="mt-8">
                 <Link to="/dashboard">Bon gebruiken</Link>
               </Button>
             ) : null}
+
           </>
         ) : null}
       </div>
