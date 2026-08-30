@@ -70,6 +70,9 @@ export interface PublicGiftCard {
   purchaserName: string | null;
   message: string | null;
   status: "pending" | "paid" | "delivered" | "cancelled";
+  /** Alleen voor fysieke bonnen: pending_print → packaged → shipped. */
+  fulfilmentStatus: "not_applicable" | "pending_print" | "packaged" | "shipped";
+  trackingCode: string | null;
   redeemed: boolean;
   createdAt: string;
 }

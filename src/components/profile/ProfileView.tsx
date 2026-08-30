@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { BadgeCheck, Mail, UserPlus } from "lucide-react";
-import { blockHref, isWidgetBlock, themeOf, type ProfileRecord } from "@/lib/profile";
-import { BookingBlock, NewsletterBlock, isBookingUrl } from "@/components/profile/ProfileWidgets";
+import { blockHref, isPromoBlock, isWidgetBlock, themeOf, type ProfileRecord } from "@/lib/profile";
+import {
+  BookingBlock,
+  NewsletterBlock,
+  PromoBlock,
+  isBookingUrl,
+} from "@/components/profile/ProfileWidgets";
 import { SocialPlatformIcon } from "@/lib/social-icons";
 import { PLATFORM_LABEL, formatFollowers } from "@/lib/social-verify";
 import { FavoritesShowcase } from "@/components/profile/FavoritesShowcase";
@@ -324,7 +329,17 @@ export function ProfileView({
             </p>
           )}
           {blocks.map((b) =>
-            isWidgetBlock(b.kind) || isBookingUrl(blockHref(b)) ? (
+            isPromoBlock(b.kind) ? (
+              <PromoBlock
+                key={b.id}
+                href={blockHref(b)}
+                label={b.label}
+                badge={b.badge}
+                expiresAt={b.expiresAt}
+                style={buttonStyle}
+                accent={t.accent ?? t.border ?? "currentColor"}
+              />
+            ) : isWidgetBlock(b.kind) || isBookingUrl(blockHref(b)) ? (
               b.kind === "newsletter" ? (
                 <NewsletterBlock
                   key={b.id}

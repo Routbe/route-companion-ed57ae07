@@ -14,7 +14,31 @@ export interface ProfileBlock {
   label: string;
   value: string;
   hidden?: boolean;
+  /** Promo/featured: badgetekst zoals "🔥 NIEUW" of "⚡ 20% KORTING". */
+  badge?: string;
+  /** Promo/featured: ISO-datum waarop de actie afloopt (aftelklok). */
+  expiresAt?: string;
 }
+
+/** Kant-en-klare badges voor het promo/featured-component. */
+export const PROMO_BADGE_PRESETS = [
+  "🔥 NIEUW",
+  "⚡ 20% KORTING",
+  "🎙️ LAATSTE AFLEVERING",
+  "⏳ TIJDELIJK",
+  "🎁 CADEAU",
+] as const;
+
+/** Copy-voorzetjes zodat de titel actiegericht blijft. */
+export const PROMO_COPY_PRESETS = [
+  "Lees mijn nieuwste blog over…",
+  "Claim 10% korting op…",
+  "Beluister aflevering #…",
+  "Bekijk mijn nieuwste aanbod",
+] as const;
+
+export const isPromoBlock = (kind: string) => kind === "promo";
+
 
 export interface ProfileRecord {
   id: string;
@@ -649,6 +673,13 @@ export const BLOCK_KINDS: {
     category: "web",
     placeholder: "https://cal.com/jouwnaam/30min",
   },
+  {
+    kind: "promo",
+    label: "Promo / Featured link",
+    category: "contact",
+    placeholder: "https://…",
+  },
+
 ];
 
 

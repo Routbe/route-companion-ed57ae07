@@ -1,11 +1,81 @@
-import { useState, type CSSProperties } from "react";
-import { CalendarClock, Loader2, Mail } from "lucide-react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { CalendarClock, Loader2, Mail, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { subscribeNewsletter } from "@/lib/newsletter.functions";
 import { Turnstile } from "@/components/Turnstile";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-/** Interactieve kaarten op het publieke profiel (nieuwsbrief, agenda). */
+/** Interactieve kaarten op het publieke profiel (nieuwsbrief, agenda, promo). */
+
+/** Resterende tijd tot een ISO-datum, of null wanneer de actie voorbij is. */
+function countdownLabel(iso: string | undefined, now: number): string | null {
+  if (!iso) return null;
+  const end = Date.parse(iso);
+  if (!Number.isFinite(end)) return null;
+  const ms = end - now;
+  if (ms <= 0) return null;
+  const days = Math.floor(ms / 86_400_000);
+  const hours = Math.floor((ms % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((ms % 3_600_000) / 60_000);
+  if (days > 0) return `nog ${days}d ${hours}u`;
+  if (hours > 0) return `nog ${hours}u ${minutes}m`;
+  return `nog ${minutes}m`;
+}
+
+/** Featured link met accentrand, badge en optionele aftelklok. */
+export function PromoBlock({
+  href,
+  label,
+  badge,
+  expiresAt,
+  style,
+  accent,
+}: {
+  href: string;
+  label: string;
+  badge?: string | undefined;
+  expiresAt?: string | undefined;
+  style: CSSProperties;
+  accent: string;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!expiresAt) return;
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, [expiresAt]);
+
+  const countdown = countdownLabel(expiresAt, now);
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="relative flex min-h-14 w-full flex-col gap-1 px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+      style={{ ...style, border: `1px solid ${accent}`, boxShadow: `0 0 0 3px ${accent}22` }}
+    >
+      <span className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{label || "Bekijk mijn nieuwste aanbod"}</span>
+      </span>
+      {(badge || countdown) && (
+        <span className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-wide opacity-90">
+          {badge && (
+            <span
+              className="rounded-full px-2 py-0.5"
+              style={{ border: `1px solid ${accent}`, color: accent }}
+            >
+              {badge}
+            </span>
+          )}
+          {countdown && <span>{countdown}</span>}
+        </span>
+      )}
+    </a>
+  );
+}
+
 
 /** Brevo-nieuwsbriefinschrijving, volledig in de pagina. */
 export function NewsletterBlock({

@@ -58,6 +58,7 @@ import { Route as SSlugRouteImport } from './routes/s.$slug'
 import { Route as StatsTokenRouteImport } from './routes/stats.$token'
 import { Route as UUsernameRouteImport } from './routes/u.$username'
 import { Route as AuthenticatedAdminContactRouteImport } from './routes/_authenticated/admin.contact'
+import { Route as AuthenticatedAdminGiftCardsRouteImport } from './routes/_authenticated/admin.gift-cards'
 import { Route as AuthenticatedAdminOpsRouteImport } from './routes/_authenticated/admin.ops'
 import { Route as AuthenticatedAdminSepaRouteImport } from './routes/_authenticated/admin.sepa'
 import { Route as AuthenticatedAdminSubdomainsRouteImport } from './routes/_authenticated/admin.subdomains'
@@ -335,6 +336,12 @@ const AuthenticatedAdminContactRoute =
     path: '/contact',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminGiftCardsRoute =
+  AuthenticatedAdminGiftCardsRouteImport.update({
+    id: '/gift-cards',
+    path: '/gift-cards',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminOpsRoute = AuthenticatedAdminOpsRouteImport.update({
   id: '/ops',
   path: '/ops',
@@ -551,6 +558,7 @@ export interface FileRoutesByFullPath {
   '/stats/$token': typeof StatsTokenRoute
   '/u/$username': typeof UUsernameRouteWithChildren
   '/admin/contact': typeof AuthenticatedAdminContactRoute
+  '/admin/gift-cards': typeof AuthenticatedAdminGiftCardsRoute
   '/admin/ops': typeof AuthenticatedAdminOpsRoute
   '/admin/sepa': typeof AuthenticatedAdminSepaRoute
   '/admin/subdomains': typeof AuthenticatedAdminSubdomainsRoute
@@ -632,6 +640,7 @@ export interface FileRoutesByTo {
   '/stats/$token': typeof StatsTokenRoute
   '/u/$username': typeof UUsernameRouteWithChildren
   '/admin/contact': typeof AuthenticatedAdminContactRoute
+  '/admin/gift-cards': typeof AuthenticatedAdminGiftCardsRoute
   '/admin/ops': typeof AuthenticatedAdminOpsRoute
   '/admin/sepa': typeof AuthenticatedAdminSepaRoute
   '/admin/subdomains': typeof AuthenticatedAdminSubdomainsRoute
@@ -715,6 +724,7 @@ export interface FileRoutesById {
   '/stats/$token': typeof StatsTokenRoute
   '/u/$username': typeof UUsernameRouteWithChildren
   '/_authenticated/admin/contact': typeof AuthenticatedAdminContactRoute
+  '/_authenticated/admin/gift-cards': typeof AuthenticatedAdminGiftCardsRoute
   '/_authenticated/admin/ops': typeof AuthenticatedAdminOpsRoute
   '/_authenticated/admin/sepa': typeof AuthenticatedAdminSepaRoute
   '/_authenticated/admin/subdomains': typeof AuthenticatedAdminSubdomainsRoute
@@ -798,6 +808,7 @@ export interface FileRouteTypes {
     | '/stats/$token'
     | '/u/$username'
     | '/admin/contact'
+    | '/admin/gift-cards'
     | '/admin/ops'
     | '/admin/sepa'
     | '/admin/subdomains'
@@ -879,6 +890,7 @@ export interface FileRouteTypes {
     | '/stats/$token'
     | '/u/$username'
     | '/admin/contact'
+    | '/admin/gift-cards'
     | '/admin/ops'
     | '/admin/sepa'
     | '/admin/subdomains'
@@ -961,6 +973,7 @@ export interface FileRouteTypes {
     | '/stats/$token'
     | '/u/$username'
     | '/_authenticated/admin/contact'
+    | '/_authenticated/admin/gift-cards'
     | '/_authenticated/admin/ops'
     | '/_authenticated/admin/sepa'
     | '/_authenticated/admin/subdomains'
@@ -1398,6 +1411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminContactRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/gift-cards': {
+      id: '/_authenticated/admin/gift-cards'
+      path: '/gift-cards'
+      fullPath: '/admin/gift-cards'
+      preLoaderRoute: typeof AuthenticatedAdminGiftCardsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/ops': {
       id: '/_authenticated/admin/ops'
       path: '/ops'
@@ -1636,6 +1656,7 @@ const UsernameRouteWithChildren = UsernameRoute._addFileChildren(
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminContactRoute: typeof AuthenticatedAdminContactRoute
+  AuthenticatedAdminGiftCardsRoute: typeof AuthenticatedAdminGiftCardsRoute
   AuthenticatedAdminOpsRoute: typeof AuthenticatedAdminOpsRoute
   AuthenticatedAdminSepaRoute: typeof AuthenticatedAdminSepaRoute
   AuthenticatedAdminSubdomainsRoute: typeof AuthenticatedAdminSubdomainsRoute
@@ -1644,6 +1665,7 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminContactRoute: AuthenticatedAdminContactRoute,
+  AuthenticatedAdminGiftCardsRoute: AuthenticatedAdminGiftCardsRoute,
   AuthenticatedAdminOpsRoute: AuthenticatedAdminOpsRoute,
   AuthenticatedAdminSepaRoute: AuthenticatedAdminSepaRoute,
   AuthenticatedAdminSubdomainsRoute: AuthenticatedAdminSubdomainsRoute,
