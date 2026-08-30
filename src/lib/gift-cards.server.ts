@@ -243,6 +243,9 @@ function toPublic(row: Row, redeemed: boolean): PublicGiftCard {
     purchaserName: str(row, "purchaser_name"),
     message: str(row, "message"),
     status: (str(row, "status") ?? "pending") as PublicGiftCard["status"],
+    fulfilmentStatus: (str(row, "fulfilment_status") ??
+      "not_applicable") as PublicGiftCard["fulfilmentStatus"],
+    trackingCode: str(row, "tracking_code"),
     redeemed,
     createdAt: str(row, "created_at") ?? new Date().toISOString(),
   };
