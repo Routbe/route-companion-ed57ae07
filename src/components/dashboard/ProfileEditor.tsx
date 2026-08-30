@@ -85,12 +85,16 @@ import {
   brandOf,
   isValidHandle,
   isReservedHandle,
+  isPromoBlock,
   newBlockId,
+  PROMO_BADGE_PRESETS,
+  PROMO_COPY_PRESETS,
   normalizeHandle,
   type ProfileBlock,
   type ProfileRecord,
   themeOf,
 } from "@/lib/profile";
+import { ConversionCoach } from "@/components/dashboard/ConversionCoach";
 import {
   Accordion,
   AccordionContent,
@@ -657,6 +661,8 @@ export function ProfileEditor() {
         <div className="min-w-0 space-y-4">
           {tab === "links" && (
             <>
+              <ConversionCoach blocks={blocks} />
+
               {/* Permanent Profile Info Card */}
               <section className="space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-5">
                 <h2 className="text-lg font-medium">Profile Info</h2>
@@ -840,6 +846,57 @@ export function ProfileEditor() {
                               )}
                               {hint.help}
                             </p>
+                            {isPromoBlock(b.kind) && (
+                              <div className="space-y-2 rounded-xl border border-border/60 bg-background p-3">
+                                <p className="text-[11px] font-medium text-foreground">
+                                  Promo-instellingen
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {PROMO_BADGE_PRESETS.map((preset) => (
+                                    <button
+                                      key={preset}
+                                      type="button"
+                                      onClick={() => patch(b.id, { badge: preset })}
+                                      className="rounded-full border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    >
+                                      {preset}
+                                    </button>
+                                  ))}
+                                </div>
+                                <Input
+                                  className="input-field h-9 rounded-xl"
+                                  placeholder="Badge (bijv. 🔥 NIEUW)"
+                                  maxLength={32}
+                                  value={b.badge ?? ""}
+                                  onChange={(e) => patch(b.id, { badge: e.target.value })}
+                                />
+                                <Input
+                                  type="datetime-local"
+                                  className="input-field h-9 rounded-xl"
+                                  aria-label="Actie loopt tot"
+                                  value={(b.expiresAt ?? "").slice(0, 16)}
+                                  onChange={(e) =>
+                                    patch(b.id, {
+                                      expiresAt: e.target.value
+                                        ? new Date(e.target.value).toISOString()
+                                        : "",
+                                    })
+                                  }
+                                />
+                                <div className="flex flex-wrap gap-1.5">
+                                  {PROMO_COPY_PRESETS.map((preset) => (
+                                    <button
+                                      key={preset}
+                                      type="button"
+                                      onClick={() => patch(b.id, { label: preset })}
+                                      className="rounded-full border border-dashed border-border px-2 py-1 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    >
+                                      {preset}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             <div className="flex items-center gap-1">
                               <button
                                 type="button"
