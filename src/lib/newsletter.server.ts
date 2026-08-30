@@ -33,15 +33,42 @@ export async function newsletterListFor(handle: string): Promise<number | null> 
   return Number.isFinite(id) && id > 0 ? id : null;
 }
 
+/**
+ * Bewaart de lead eerst in Neon (idempotent per handle+e-mail) en stuurt hem
+ * daarna optioneel door naar Brevo. Zonder Brevo-configuratie blijft de
+ * inschrijving gewoon geldig — de maker houdt zijn lijst.
+ */
 export async function subscribeToNewsletter(params: {
   handle: string;
   email: string;
 }): Promise<{ ok: boolean; message: string }> {
-  const key = process.env["BREVO_API_KEY"];
-  if (!key) return { ok: false, message: "Nieuwsbrief is nog niet geconfigureerd." };
+  const handle = params.handle.toLowerCase();
+  const listId = await newsletterListFor(handle);
 
-  const listId = await newsletterListFor(params.handle);
-  if (!listId) return { ok: false, message: "Deze maker heeft geen nieuwsbrieflijst ingesteld." };
+  let existed = false;
+  try {
+    const rows = (await sql`
+      insert into public.newsletter_subscribers (handle, email, brevo_list_id)
+      values (${handle}, ${params.email}, ${listId})
+      on conflict (handle, email) do update set
+        unsubscribed_at = null,
+        brevo_list_id = coalesce(excluded.brevo_list_id, public.newsletter_subscribers.brevo_list_id),
+        updated_at = now()
+      returning (xmax <> 0) as existed
+    `) as Row[];
+    existed = rows[0]?.["existed"] === true;
+  } catch (error) {
+    console.error("[newsletter] kon de inschrijving niet bewaren", error);
+    return { ok: false, message: "Inschrijven lukte niet. Probeer het later opnieuw." };
+  }
+
+  const key = process.env["BREVO_API_KEY"];
+  if (!key || !listId) {
+    return {
+      ok: true,
+      message: existed ? "Je stond al ingeschreven." : "Je bent ingeschreven.",
+    };
+  }
 
   const res = await fetch(BREVO_CONTACTS, {
     method: "POST",
@@ -50,17 +77,25 @@ export async function subscribeToNewsletter(params: {
       email: params.email,
       listIds: [listId],
       updateEnabled: true,
-      attributes: { ROUT_HANDLE: params.handle },
+      attributes: { ROUT_HANDLE: handle },
     }),
   });
 
-  if (res.ok || res.status === 204) return { ok: true, message: "Je bent ingeschreven." };
+  const detail = res.ok || res.status === 204 ? "" : (await res.text().catch(() => "")).slice(0, 200);
+  const synced = res.ok || res.status === 204 || detail.includes("duplicate_parameter");
 
-  // Brevo geeft 400 met code duplicate_parameter als het contact al bestaat.
-  const detail = (await res.text().catch(() => "")).slice(0, 200);
-  if (detail.includes("duplicate_parameter")) {
-    return { ok: true, message: "Je stond al ingeschreven." };
+  await sql`
+    update public.newsletter_subscribers
+       set brevo_synced_at = ${synced ? new Date().toISOString() : null},
+           brevo_error = ${synced ? null : detail || `HTTP ${res.status}`},
+           updated_at = now()
+     where handle = ${handle} and email = ${params.email}
+  `.catch(() => undefined);
+
+  if (!synced) {
+    console.error("[newsletter] Brevo weigerde de inschrijving", res.status, detail);
+    // De lead staat wél in Neon, dus voor de bezoeker is dit geslaagd.
   }
-  console.error("[newsletter] Brevo weigerde de inschrijving", res.status, detail);
-  return { ok: false, message: "Inschrijven lukte niet. Probeer het later opnieuw." };
+  return { ok: true, message: existed ? "Je stond al ingeschreven." : "Je bent ingeschreven." };
 }
+

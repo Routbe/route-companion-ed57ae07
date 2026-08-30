@@ -410,6 +410,37 @@ export async function setUserVerified(opts: {
      where id = ${opts.userId}
   `;
 
+  // Verificatie promoot het account naar de pro-tier en zet — indien nog niet
+  // gebeurd — de eerste root-handle op basis van de wettelijke naam, zodat de
+  // gebruiker van /u/<alias> naar rout.be/<handle> verhuist.
+  let promotedHandle: string | null = null;
+  if (opts.verified) {
+    await sql`
+      update public.profiles
+         set tier = 'pro', subdomain_tier = 'pro', updated_at = now()
+       where id = ${opts.userId}
+    `.catch((error: unknown) => {
+      console.error("[verify] tier promotion failed", error);
+    });
+
+    const currentHandle = ((row["username"] as string | null) ?? "").trim();
+    if (!currentHandle && legalName) {
+      for (const candidate of verifiedHandleSuggestionList(legalName)) {
+        const taken = (await sql`
+          select id from public.profiles where username = ${candidate} limit 1
+        `) as Row[];
+        if (taken.length) continue;
+        await sql`
+          update public.profiles set username = ${candidate}, updated_at = now()
+           where id = ${opts.userId}
+        `;
+        promotedHandle = candidate;
+        break;
+      }
+    }
+  }
+
+
   await writeAudit({
     adminId: opts.adminId,
     action: opts.verified ? "user_verified" : "user_unverified",
@@ -418,5 +449,5 @@ export async function setUserVerified(opts: {
     notes: legalName || null,
   });
 
-  return { ok: true as const, verified: opts.verified, legalName };
+  return { ok: true as const, verified: opts.verified, legalName, promotedHandle };
 }

@@ -111,17 +111,64 @@ export async function resolvePromo(code: string | null | undefined): Promise<Pro
   return toDiscount(normalized, found.percentOff, found.amountOffCents, found.label ?? null);
 }
 
-/** Verhoogt de teller bij een geslaagde (gratis) claim — best effort, faalt de flow nooit. */
-export async function recordPromoRedemption(code: string | null | undefined): Promise<void> {
-  if (!code) return;
-  const normalized = normalizePromoCode(code);
+/** Schrijft één regel in het promo-auditspoor. Faalt nooit de flow. */
+export async function logPromoEvent(
+  code: string,
+  event: "created" | "sent_email" | "sent_sms" | "redeemed" | "exhausted",
+  detail?: string | null,
+): Promise<void> {
   try {
     await sql`
-      update public.promo_codes
-         set redeemed_count = redeemed_count + 1, updated_at = now()
-       where code = ${normalized}
+      insert into public.promo_code_events (code, event, detail)
+      values (${normalizePromoCode(code)}, ${event}, ${detail ?? null})
     `;
   } catch (error) {
-    console.error("[promo] redemption counter update failed", error);
+    console.error("[promo] audit log failed", error);
   }
 }
+
+/** Is de code op dit moment nog inwisselbaar? Gebruikt vóór e-mail/SMS-verzending. */
+export async function isPromoAvailable(code: string): Promise<boolean> {
+  return (await resolvePromo(code)) !== null;
+}
+
+/**
+ * Verhoogt de teller bij een geslaagde claim. De update is atomair: de
+ * `max_redemptions`-guard zit in de WHERE, zodat twee gelijktijdige claims nooit
+ * samen over het maximum gaan. Geeft `false` als de code al op was.
+ */
+export async function recordPromoRedemption(code: string | null | undefined): Promise<boolean> {
+  if (!code) return false;
+  const normalized = normalizePromoCode(code);
+  try {
+    const rows = (await sql`
+      update public.promo_codes
+         set redeemed_count = redeemed_count + 1,
+             last_redeemed_at = now(),
+             active = case
+               when max_redemptions is not null and redeemed_count + 1 >= max_redemptions
+                 then false else active end,
+             updated_at = now()
+       where code = ${normalized}
+         and active = true
+         and (expires_at is null or expires_at > now())
+         and (max_redemptions is null or redeemed_count < max_redemptions)
+      returning redeemed_count, max_redemptions
+    `) as { redeemed_count: number; max_redemptions: number | null }[];
+
+    const row = rows[0];
+    if (!row) {
+      await logPromoEvent(normalized, "exhausted", "claim geweigerd: niet meer geldig");
+      return false;
+    }
+    await logPromoEvent(normalized, "redeemed", `gebruik #${row.redeemed_count}`);
+    if (row.max_redemptions !== null && row.redeemed_count >= row.max_redemptions) {
+      await logPromoEvent(normalized, "exhausted", "maximum bereikt");
+    }
+    return true;
+  } catch (error) {
+    console.error("[promo] redemption counter update failed", error);
+    return false;
+  }
+}
+
