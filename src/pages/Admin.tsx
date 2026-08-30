@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { logQuietly, notifyError } from "@/lib/notify";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminVipPanel } from "@/components/admin/AdminVipPanel";
+import { UserIdentityLines } from "@/components/admin/UserIdentityLines";
+import { VerifyUserDialog } from "@/components/admin/VerifyUserDialog";
 import { AdminAccessPanel } from "@/components/admin/AdminAccessPanel";
 import { EmailFlowTester } from "@/components/admin/EmailFlowTester";
 import { DeliveryMonitorPanel } from "@/components/admin/DeliveryMonitorPanel";
@@ -1449,9 +1451,11 @@ export default function Admin() {
                                 />
                               ) : null}
                             </p>
-                            <p className="text-xs font-medium text-foreground">
-                              @{row.username ?? "—"}
-                            </p>
+                            <UserIdentityLines
+                              verified={row.verified}
+                              username={row.username}
+                              alias={row.subdomainAlias}
+                            />
                             <p className="text-xs text-muted-foreground">{row.email ?? "—"}</p>
                             <p className="font-mono text-[10px] text-muted-foreground">
                               {row.userId}
@@ -1556,6 +1560,13 @@ export default function Admin() {
                             Standard actions
                           </p>
                           <div className="flex flex-wrap gap-1.5">
+                            {row.verified ? null : (
+                              <VerifyUserDialog
+                                userId={row.userId}
+                                displayName={row.displayName}
+                                onDone={() => void refreshUsers()}
+                              />
+                            )}
                             <Button
                               size="sm"
                               variant="secondary"

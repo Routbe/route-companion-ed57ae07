@@ -113,8 +113,9 @@ export function BillingHistoryPanel() {
               ) : (
                 <Download className="h-4 w-4" aria-hidden />
               )}
-              PDF
+              Factuur downloaden (PDF)
             </Button>
+
           </li>
         ))}
       </ul>

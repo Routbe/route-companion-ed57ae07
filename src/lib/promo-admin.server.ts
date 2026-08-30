@@ -7,7 +7,7 @@
 import { sql } from "@/lib/neon";
 import { sendMail } from "@/emails/send.server";
 import { asEmailLanguage, type EmailLanguage } from "@/emails/template-ids";
-import { normalizePromoCode } from "./promo.server";
+import { isPromoAvailable, logPromoEvent, normalizePromoCode } from "./promo.server";
 
 export interface CreatePromoInput {
   code?: string | null;
@@ -194,9 +194,23 @@ export async function createPromoAndInvite(input: CreatePromoInput): Promise<Cre
       updated_at = now()
   `;
 
+  await logPromoEvent(code, "created", label);
+
   const email = input.email?.trim() ?? "";
   const phone = input.phone?.trim() ?? "";
   if (!email && !phone) return { ok: true, code, emailed: false, texted: false };
+
+  // Nooit een code versturen die al op of verlopen is: eerst de beschikbaarheid
+  // opnieuw uit de database halen, dan pas Brevo aanspreken.
+  if (!(await isPromoAvailable(code))) {
+    return {
+      ok: false,
+      code,
+      emailed: false,
+      texted: false,
+      error: "Deze code is niet meer geldig (verlopen of al volledig gebruikt).",
+    };
+  }
 
   const language = asEmailLanguage(input.language);
   const discount = discountLabel(percentOff, amountOffCents, language);
@@ -216,6 +230,7 @@ export async function createPromoAndInvite(input: CreatePromoInput): Promise<Cre
       tag: "promo-invite",
     });
     texted = sms.sent;
+    if (sms.sent) await logPromoEvent(code, "sent_sms", phone);
     if (sms.error) errors.push(sms.error);
   }
 
@@ -238,6 +253,7 @@ export async function createPromoAndInvite(input: CreatePromoInput): Promise<Cre
     tags: ["promo-invite"],
   });
 
+  if (result.sent) await logPromoEvent(code, "sent_email", email);
   if (result.error) errors.push(result.error);
   return {
     ok: true,

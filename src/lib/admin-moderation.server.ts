@@ -28,6 +28,8 @@ export type ModeratedUser = {
   isBanned: boolean;
   moderationReason: string | null;
   handleGrant: string | null;
+  /** Gratis/alias-identiteit: rout.be/u/<alias>. */
+  subdomainAlias: string | null;
   aliasStatus: string | null;
   forwardingEmail: string | null;
   blocks: { id?: string; label?: string; value?: string; kind?: string }[];
@@ -64,6 +66,7 @@ function mapProfile(row: ProfileRow, email: string | null): ModeratedUser {
     isBanned: Boolean(row["is_banned"]),
     moderationReason: (row["moderation_reason"] as string | null) ?? null,
     handleGrant: (row["handle_grant"] as string | null) ?? null,
+    subdomainAlias: (row["subdomain_alias"] as string | null) ?? null,
     aliasStatus: (row["alias_status"] as string | null) ?? null,
     forwardingEmail: (row["forwarding_email"] as string | null) ?? null,
     blocks: Array.isArray(row["blocks"]) ? (row["blocks"] as ModeratedUser["blocks"]) : [],
