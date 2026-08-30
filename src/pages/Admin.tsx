@@ -1254,6 +1254,10 @@ export default function Admin() {
             <a href="/admin/sepa" className="inline-block text-sm underline">
               {t("admin.sepa_link")}
             </a>
+            <a href="/admin/gift-cards" className="inline-block text-sm underline">
+              Cadeaubon-verzending
+            </a>
+
           </div>
         </header>
 
