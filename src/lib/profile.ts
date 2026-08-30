@@ -673,6 +673,13 @@ export const BLOCK_KINDS: {
     category: "web",
     placeholder: "https://cal.com/jouwnaam/30min",
   },
+  {
+    kind: "promo",
+    label: "Promo / Featured link",
+    category: "contact",
+    placeholder: "https://…",
+  },
+
 ];
 
 
