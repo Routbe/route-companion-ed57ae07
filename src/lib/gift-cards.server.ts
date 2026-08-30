@@ -128,6 +128,10 @@ export async function markGiftCardPaid(opts: {
     update public.gift_cards
        set status = 'paid',
            paid_at = now(),
+           fulfilment_status = case
+             when physical_delivery then 'pending_print'
+             else fulfilment_status
+           end,
            stripe_reference = coalesce(${opts.reference ?? null}, stripe_reference),
            updated_at = now()
      where id = ${opts.giftId}
