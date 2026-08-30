@@ -337,7 +337,7 @@ export function ProfileView({
                 badge={b.badge}
                 expiresAt={b.expiresAt}
                 style={buttonStyle}
-                accent={t.accent}
+                accent={t.accent ?? t.border ?? "currentColor"}
               />
             ) : isWidgetBlock(b.kind) || isBookingUrl(blockHref(b)) ? (
               b.kind === "newsletter" ? (
